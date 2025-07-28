@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Legally Distinct 5 Letter Word Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #121213;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 40px;
+    }
+    h1 {
+      color: #6aaa64;
+      margin-bottom: 20px;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(5, 60px);
+      grid-gap: 5px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      width: max-content;
+    }
+    .tile {
+      width: 60px;
+      height: 60px;
+      border: 2px solid #3a3a3c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      background-color: #121213;
+      color: white;
+    }
+    .correct { background-color: #538d4e !important; }
+    .present { background-color: #b59f3b !important; }
+    .absent  { background-color: #3a3a3c !important; }
+    #message {
+      font-size: 1.2rem;
+      margin-top: 10px;
+      height: 30px;
+    }
+    #resetBtn {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #538d4e;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #keyboard {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .key-row {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+    }
+    .key {
+      background-color: #818384;
+      color: white;
+      border: none;
+      padding: 12px 14px;
+      border-radius: 5px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      min-width: 40px;
+      text-transform: uppercase;
+    }
+    .key.correct { background-color: #538d4e !important; }
+    .key.present { background-color: #b59f3b !important; }
+    .key.absent  { background-color: #3a3a3c !important; }
+  </style>
+</head>
+<body>
+  <h1>Legally Distinct 5 Letter Word Game</h1>
+  <div id="board"></div>
+  <div id="message"></div>
+
+  <div id="keyboard">
+    <div class="key-row" id="row1"></div>
+    <div class="key-row" id="row2"></div>
+    <div class="key-row" id="row3"></div>
+  </div>
+
+  <button id="resetBtn">Reset Game</button>
+
+  <script>
+    let wordList = [];
+    let solution = '';
+    const maxGuesses = 6;
+    let currentRow = 0;
+    let currentGuess = '';
+    let keyStates = {};
+
+    const board = document.getElementById('board');
+    const message = document.getElementById('message');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const row1 = "QWERTYUIOP".split('');
+    const row2 = "ASDFGHJKL".split('');
+    const row3 = ["ENTER", ..."ZXCVBNM".split(''), "⌫"];
+
+    function createKeyboard() {
+      row1.forEach(l => createKey('row1', l));
+      row2.forEach(l => createKey('row2', l));
+      row3.forEach(l => createKey('row3', l));
+    }
+
+    function createKey(rowId, label) {
+      const key = document.createElement('button');
+      key.classList.add('key');
+      key.textContent = label;
+      key.addEventListener('click', () => handleKey(label));
+      document.getElementById(rowId).appendChild(key);
+    }
+
+    function setupBoard() {
+      board.innerHTML = '';
+      for (let i = 0; i < maxGuesses * 5; i++) {
+        const tile = document.createElement('div');
+        tile.classList.add('tile');
+        board.appendChild(tile);
+      }
+    }
+
+    function handleKey(key) {
+      if (currentRow >= maxGuesses) return;
+
+      if (key === "⌫") {
+        if (currentGuess.length > 0) {
+          currentGuess = currentGuess.slice(0, -1);
+          updateTiles();
+        }
+      } else if (key === "ENTER") {
+        if (currentGuess.length === 5) {
+          if (wordList.includes(currentGuess)) {
+            checkGuess();
+          } else {
+            message.textContent = "❓ Not a valid word!";
+          }
+        }
+      } else if (/^[A-Z]$/.test(key) && currentGuess.length < 5) {
+        currentGuess += key;
+        updateTiles();
+      }
+    }
+
+    function updateTiles() {
+      for (let i = 0; i < 5; i++) {
+        const tileIndex = currentRow * 5 + i;
+        board.children[tileIndex].textContent = currentGuess[i] || '';
+      }
+    }
+
+    function updateKeyboardColors(letter, status) {
+      const priorities = { 'absent': 0, 'present': 1, 'correct': 2 };
+      if (priorities[status] >= (priorities[keyStates[letter]] || 0)) {
+        keyStates[letter] = status;
+        document.querySelectorAll('.key').forEach(key => {
+          if (key.textContent === letter) {
+            key.classList.remove('correct', 'present', 'absent');
+            key.classList.add(status);
+          }
+        });
+      }
+    }
+
+    function checkGuess() {
+      const guess = currentGuess;
+      const solutionArray = solution.split('');
+      const result = Array(5).fill('absent');
+
+      for (let i = 0; i < 5; i++) {
+        if (guess[i] === solution[i]) {
+          result[i] = 'correct';
+          solutionArray[i] = null;
+        }
+      }
+
+      for (let i = 0; i < 5; i++) {
+        if (result[i] !== 'correct' && solutionArray.includes(guess[i])) {
+          result[i] = 'present';
+          solutionArray[solutionArray.indexOf(guess[i])] = null;
+        }
+      }
+
+      for (let i = 0; i < 5; i++) {
+        const tileIndex = currentRow * 5 + i;
+        board.children[tileIndex].classList.add(result[i]);
+        updateKeyboardColors(guess[i], result[i]);
+      }
+
+      if (guess === solution) {
+        message.textContent = '🎉 You guessed it!';
+        currentRow = maxGuesses;
+      } else {
+        currentRow++;
+        currentGuess = '';
+        if (currentRow === maxGuesses) {
+          message.textContent = `❌ The word was "${solution}".`;
+        }
+      }
+    }
+
+    function pickRandomWord() {
+      return wordList[Math.floor(Math.random() * wordList.length)];
+    }
+
+    function initializeGame() {
+      setupBoard();
+      solution = pickRandomWord();
+      currentRow = 0;
+      currentGuess = '';
+      keyStates = {};
+      message.textContent = '';
+
+      document.querySelectorAll('.key').forEach(k => {
+        k.classList.remove('correct', 'present', 'absent');
+      });
+    }
+
+    async function loadWordList() {
+      try {
+        const response = await fetch('words.txt');
+        if (!response.ok) throw new Error('Failed to load word list');
+        const text = await response.text();
+        wordList = text
+          .split('\n')
+          .map(w => w.trim().toUpperCase())
+          .filter(w => w.length === 5);
+        if(wordList.length === 0) throw new Error('Word list is empty or invalid');
+        initializeGame();
+      } catch (err) {
+        message.textContent = 'Error loading word list.';
+        console.error(err);
+      }
+    }
+
+    resetBtn.addEventListener('click', initializeGame);
+
+    document.addEventListener('keydown', (e) => {
+      if (/^[a-zA-Z]$/.test(e.key) || e.key === "Backspace" || e.key === "Enter") {
+        const key = e.key === "Backspace" ? "⌫" : e.key.toUpperCase();
+        handleKey(key);
+      }
+    });
+
+    createKeyboard();
+    setupBoard();
+    loadWordList();
+  </script>
+</body>
+</html>
