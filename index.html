@@ -49,7 +49,7 @@
     #resetBtn {
       margin-top: 15px;
       padding: 10px 20px;
-      background-color: #538d4e;
+      background-color: #FF0000;
       border: none;
       border-radius: 5px;
       color: white;
@@ -82,6 +82,13 @@
     .key.correct { background-color: #538d4e !important; }
     .key.present { background-color: #b59f3b !important; }
     .key.absent  { background-color: #3a3a3c !important; }
+    /* Reset button container to align it right */
+    .reset-container {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      justify-content: flex-end;
+    }
   </style>
 </head>
 <body>
@@ -95,7 +102,9 @@
     <div class="key-row" id="row3"></div>
   </div>
 
-  <button id="resetBtn">Reset Game</button>
+  <div class="reset-container">
+    <button id="resetBtn">Reset Game</button>
+  </div>
 
   <script>
     let wordList = [];
@@ -123,6 +132,9 @@
       const key = document.createElement('button');
       key.classList.add('key');
       key.textContent = label;
+      if (label === "ENTER") {
+        key.style.backgroundColor = "#538d4e"; // Make ENTER button green
+      }
       key.addEventListener('click', () => handleKey(label));
       document.getElementById(rowId).appendChild(key);
     }
